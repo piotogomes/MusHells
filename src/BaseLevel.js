@@ -74,6 +74,7 @@ export default class BaseLevel extends Phaser.Scene {
         })
 
         this.physics.add.collider(this.spikes, this.platforms, null, null, this);
+        this.physics.add.collider(this.player, this.platforms, null, null, this);
 
         const dmgObjects = [this.lava, this.spikes]
 

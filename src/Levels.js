@@ -19,7 +19,7 @@ export class Level1 extends BaseLevel {
     }
     update(timer, delta) {
         super.update(timer, delta)
-        this.objMovement('platform', 'plat1', 'horizontal', 0.001, 1500, delta);
+        this.objMovement('platform', 'plat7', 'horizontal', 0.002, 1500, delta);
     }
 
 }
@@ -40,7 +40,6 @@ export class Level2 extends BaseLevel {
         super.create();
         this.levelText = this.add.text(1600, 16, 'More moves', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
-
         this.player.setCollideWorldBounds(false);
     }
 
@@ -80,7 +79,6 @@ export class Level3 extends BaseLevel {
         super.update(time, delta)
         this.objMovement('platform', 'plat6', 'vertical', 0.003, 1000, delta);
         this.objMovement('platform', 'plat7', 'horizontal', 0.004, 1000, delta);
-        this.objMovement('spike', 'spike1', 'vertical', 0.003, 1000, delta);
     }
 
 }
@@ -219,13 +217,29 @@ export class Level8 extends BaseLevel {
         this.levelText = this.add.text(1500, 16, 'Almost Over', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
         this.platforms.getChildren().forEach(plat => {
-            plat.body.setAllowGravity(true)
-            console.log(plat.getData('ID'))
+            if (plat.getData('ID').at(-1) > 5) {
+                this.physics.add.collider(this.player, plat, (player, plat) => {
+                        this.time.delayedCall(200, () => {
+                            plat.body.setAllowGravity(true); 
+                        });
+                    
+                }, null, this);
+
+            }
+
         })
     }
 
     update(time, delta) {
         super.update(time, delta)
+        this.objMovement('platform', 'plat4', 'horizontal', 0.0005, -5000, delta);
+        this.objMovement('platform', 'plat1', 'circular', 0.0025, 1300, delta);
+        this.objMovement('spike', 'spike1', 'vertical', 0.0015, 900, delta);
+        this.objMovement('spike', 'spike2', 'vertical', 0.0015, 1500, delta);
+        this.objMovement('spike', 'spike3', 'vertical', 0.0015, 1500, delta);
+        this.objMovement('spike', 'spike4', 'vertical', 0.0015, 900, delta);
+
+
     }
     nextLevel() {
         this.scene.start('GameOver', 'winner');

@@ -89,18 +89,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.body.onFloor()) {
                 this.startJump(-speed * 1.25); // Pulo normal
             }
-            else if (onWallLeft && this.jumps > 0) {
+            else if (onWallLeft) {
                 this.startJump(-speed * 1.2);
                 this.setVelocityX(speed * 0.8);
                 this.wallJumpTimer = 200;
             }
-            else if (onWallRight && this.jumps > 0) {
+            else if (onWallRight) {
                 this.startJump(-speed * 1.2);
                 this.setVelocityX(-speed * 0.8);
                 this.wallJumpTimer = 200;
             }
             else if (this.jumps > 0) {
                 this.startJump(-speed * 0.5);
+                this.jumps--;
             }
         }
 
@@ -118,7 +119,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     startJump(speed) {
-        this.jumps--;
         this.setVelocityY(speed);
         this.isJumping = true;
         this.jumpTimer = 0;

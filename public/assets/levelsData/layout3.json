@@ -135,8 +135,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":262.333333333333,
-                 "x":1643.83333333333,
+                 "width":200.333333333333,
+                 "x":1705.83333333333,
                  "y":775.499983333333
                 }, 
                 {
@@ -209,18 +209,6 @@
                  "width":47.2743,
                  "x":669.840933628319,
                  "y":463.311046017699
-                }, 
-                {
-                 "gid":9,
-                 "height":44.3009,
-                 "id":164,
-                 "name":"spike",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":197.717,
-                 "x":1704.35293362832,
-                 "y":705.789046017699
                 }, 
                 {
                  "gid":9,
@@ -425,6 +413,30 @@
                  "width":72.0531,
                  "x":1450.81345,
                  "y":183.15155
+                }, 
+                {
+                 "gid":9,
+                 "height":44.3009,
+                 "id":191,
+                 "name":"spike",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":95.0619,
+                 "x":1706.46905,
+                 "y":706.84955
+                }, 
+                {
+                 "gid":9,
+                 "height":44.3009,
+                 "id":192,
+                 "name":"spike",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":95.0619,
+                 "x":1804.46905,
+                 "y":706.84955
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -716,7 +728,7 @@
          "y":0
         }],
  "nextlayerid":13,
- "nextobjectid":191,
+ "nextobjectid":193,
  "orientation":"orthogonal",
  "properties":[
         {
