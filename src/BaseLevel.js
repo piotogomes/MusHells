@@ -1,5 +1,5 @@
 import Player from './Player.js';
-
+import { Coins, Doors, Bones, Spikes, Platforms } from './GameObjects.js';
 export default class BaseLevel extends Phaser.Scene {
 
     constructor(config) {
@@ -16,13 +16,8 @@ export default class BaseLevel extends Phaser.Scene {
         this.isJumping;
         this.jumpTimer;
         this.jumps;
-        this.coinsID = new Map();
-        this.platformsID = new Map();
-        this.lavaID = new Map();
-        this.boneID = new Map();
-        this.doorID = new Map();
-        this.portalID = new Map();
-        this.spikeID = new Map();
+        this.platformMap = new Map();
+        this.spikeMap = new Map();
         this.timer = this.registry.get('timer')
         this.deaths = this.registry.get('deaths')
 
@@ -30,28 +25,73 @@ export default class BaseLevel extends Phaser.Scene {
 
 
     create() {
-
-
         this.createBG()
-        this.player = new Player(this, 100, 700);
-        console.log(this.player.allowGravity)
+
+
+        this.scoreText = this.add.text(16, 16, `Score: ${this.registry.get('score')}`, { fontSize: '24px', fill: '#fff' });
+        this.lifeText = this.add.text(16, 40, `Life: ${this.registry.get('life')}`, { fontSize: '24px', fill: '#fff' });
+        this.deathCounter = this.add.text(16, 66, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '24px', fill: '#b8190e' });
+
+        this.player = new Player(this, 150, 700);
         this.player.body.allowGravity = false;
         this.cameras.main.fadeIn(900, 0, 0, 0);
         this.cameras.main.once('camerafadeincomplete', () => {
             this.player.body.allowGravity = true;
         });
+
+        this.coins = new Coins(this, this.coinsData)
+        this.physics.add.overlap(this.player, this.coins, (player, coin) => {
+            this.coins.collect(coin);
+            this.registry.inc('score', 10);
+            this.scoreText.setText('Score: ' + this.registry.get('score'));
+        }, null, this);
+
+        this.doors = new Doors(this, this.doorsData)
+        this.physics.add.collider(this.player, this.doors, null, null, this);
+
+        this.bones = new Bones(this, this.bonesData)
+        this.physics.add.overlap(this.player, this.bones, (player, bone) => {
+            this.doors.getChildren().find(door => {
+
+                if (door.getData('ID') === bone.getData('ID')) {
+                    this.doors.open(door)
+                }
+            });
+            this.bones.collect(bone)
+
+        }, null, this);
+
+        this.platforms = new Platforms(this, this.platformsData);
+        this.platforms.getChildren().forEach((plat) => {
+            this.platformMap.set(plat.getData('ID'), plat);
+        })
+
         this.createLava(this.lavaData)
+        
+        this.spikes = new Spikes(this, this.spikeData)
+        this.spikes.getChildren().forEach((spike) => {
+            this.spikeMap.set(spike.getData('ID'), spike);
+        })
+
+        this.physics.add.collider(this.spikes, this.platforms, null, null, this);
+
+        const dmgObjects = [this.lava, this.spikes]
+
+
+        this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
+            this.registry.inc('life', -1);
+            this.registry.inc('deaths', 1);
+            this.player.takeDamage(obj);
+            this.lifeText.setText('Life: ' + this.registry.get('life'));
+            this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
+        }, null, this);
+
+
+
         this.createFloor(this.floorData)
-        this.createCoins(this.coinsData)
-        this.createBone(this.boneData)
-        this.createPlatforms(this.platformsData)
-        this.createSpike(this.spikeData)
         this.createPortal(this.portalData)
-        this.createDoor(this.doorData)
         this.createInputs()
-        this.scoreText = this.add.text(16, 16, `Score: ${this.registry.get('score')}`, { fontSize: '24px', fill: '#fff' });
-        this.lifeText = this.add.text(16, 40, `Life: ${this.registry.get('life')}`, { fontSize: '24px', fill: '#fff' });
-        this.deathCounter = this.add.text(16, 66, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '24px', fill: '#b8190e' });
+
 
 
         this.input.keyboard.on('keydown-ESC', () => {
@@ -77,6 +117,9 @@ export default class BaseLevel extends Phaser.Scene {
 
     }
     update(time, delta) {
+        if (this.registry.get('life') == 0) {
+            this.gameOver = true;
+        }
         if (this.gameOver) {
             this.scene.pause()
             this.scene.launch('GameOver', 'loser');
@@ -98,51 +141,45 @@ export default class BaseLevel extends Phaser.Scene {
         this.platformsData = this.map.getObjectLayer('platform');
         this.portalData = this.map.getObjectLayer('portal');
         this.lavaData = this.map.getObjectLayer('lava');
-        this.doorData = this.map.getObjectLayer('door');
-        this.boneData = this.map.getObjectLayer('bone');
+        this.doorsData = this.map.getObjectLayer('door');
+        this.bonesData = this.map.getObjectLayer('bone');
         this.spikeData = this.map.getObjectLayer('spike');
     }
 
-    platformMovement(name, type, freq, range, delta) {
-        const platform = this.platformsID.get(name);
-        let t = platform.getData('Timer');
+    objMovement(objType, ID, type, freq, range, delta) {
+        let obj;
+        if (objType === 'spike') {
+            obj = this.spikeMap.get(ID);
+        }
+
+        if (objType === 'platform') {
+            obj = this.platformMap.get(ID);
+        }
+
+        let t = obj.getData('Timer');
         t += delta;
         const velocityValue = Math.cos(t * freq) * (range * freq * 100);
-        platform.setData('Timer', t);
+        obj.setData('Timer', t);
         if (type === 'horizontal') {
-            platform.body.setVelocityX(velocityValue);
+            obj.body.setVelocityX(velocityValue);
         }
         if (type === 'vertical') {
-            platform.body.setVelocityY(velocityValue);
+            obj.body.setVelocityY(velocityValue);
         }
         if (type === 'circular') {
             const vel = Math.sin(t * freq) * (range * freq * 100);
-            platform.body.setVelocityX(velocityValue);
-            platform.body.setVelocityY(vel);
+            obj.body.setVelocityX(velocityValue);
+            obj.body.setVelocityY(vel);
         }
     }
-    collectBone(player, bone, obj) {
-        const boneID = obj.name.at(-1);
+
+    collectBone(player, bone) {
+        const boneID = this.boneID.get()
         const doorSprite = this.doorID.get(`door${boneID}`);
-        doorSprite.destroy();
-        bone.destroy();
-    }
-
-    collectCoin(player, coin) {
-        coin.destroy();
-        this.registry.inc('score', 10);
-        this.scoreText.setText('Score: ' + this.registry.get('score'));
-    }
-
-    takeDamage(player, lava) {
-        this.registry.inc('life', -1);
-        if (this.registry.get('life') == 0) {
-            this.gameOver = true;
+        if (doorSprite) {
+            doorSprite.destroy();
         }
-        this.registry.inc('deaths', 1);
-        this.lifeText.setText('Life: ' + this.registry.get('life'));
-        this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
-        this.player.setPosition(100, 700)
+        bone.destroy();
     }
 
     // CREATE BG
@@ -203,6 +240,7 @@ export default class BaseLevel extends Phaser.Scene {
             if (obj.flippedHorizontal) {
                 img.setFlipX(true);
             }
+            img.setData('ID', obj.name);
             img.setDisplaySize(obj.width, obj.height);
             img.setOrigin(0, 1);
             img.body.setAllowGravity(false);
@@ -211,56 +249,7 @@ export default class BaseLevel extends Phaser.Scene {
         this.physics.add.collider(this.player, this.floor, null, null, this);
     }
 
-    // CREATE SPIKES
-    createSpike(objLayer) {
-        this.spikes = this.physics.add.group({ allowGravity: false });
 
-        objLayer.objects.forEach(obj => {
-            const img = this.add.sprite(obj.x, obj.y, obj.name);
-            img.setOrigin(0, 1);
-            img.setDisplaySize(obj.width, obj.height);
-
-            if (obj.flippedVertical) img.setFlipY(true);
-            if (obj.flippedHorizontal) img.setFlipX(true);
-
-            if (obj.name === 'spikeD') {
-                img.setTexture('spike');
-                img.setDisplaySize(obj.width, obj.height);
-            }
-            this.physics.add.existing(img);
-            this.spikes.add(img);
-
-            if (obj.name === 'spikeD') {
-                img.body.setAllowGravity(true);
-            } else {
-                img.body.setAllowGravity(false);
-            }
-            img.body.setSize(img.width * 0.9, img.height * 0.8);
-        });
-        this.physics.add.collider(this.spikes, this.platforms);
-        this.physics.add.overlap(this.player, this.spikes, this.takeDamage, null, this);
-    }
-    // CREATE PLATFORMS
-    createPlatforms(objLayer) {
-        this.platforms = this.physics.add.group()
-        objLayer.objects.forEach(obj => {
-            let img = this.platforms.create(obj.x, obj.y, 'platform');
-            img.setOrigin(0, 1);
-            img.setDisplaySize(obj.width, obj.height);
-            this.platformsID.set(obj.name, img);
-            img.body.setAllowGravity(false);
-            img.body.setImmovable(true)
-            img.body.setFriction(1, 1); // Faz o player "grudar"
-            img.setData('Timer', 0);
-            if (obj.flippedVertical) {
-                img.setFlipY(true);
-            }
-            if (obj.flippedHorizontal) {
-                img.setFlipX(true);
-            }
-        });
-        this.physics.add.collider(this.player, this.platforms);
-    }
     // CREATE LAVA
     createLava(objLayer) {
         this.lava = this.physics.add.group();
@@ -268,41 +257,10 @@ export default class BaseLevel extends Phaser.Scene {
             let img = this.lava.create(obj.x, obj.y, 'lava');
             img.setOrigin(0, 1);
             img.setDisplaySize(obj.width, obj.height);
-            this.lavaID.set(obj.name, img);
             img.body.setAllowGravity(false);
             img.body.setImmovable(true)
         });
-        this.physics.add.overlap(this.player, this.lava, this.takeDamage, null, this);
     }
-
-    //CREATE DOOR
-    createDoor(objLayer) {
-        this.doors = this.physics.add.group();
-        objLayer.objects.forEach(obj => {
-            let img = this.doors.create(obj.x, obj.y, 'door');
-            img.setOrigin(0, 1);
-            img.setDisplaySize(obj.width, obj.height);
-            this.doorID.set(obj.name, img);
-            img.body.setAllowGravity(false);
-            img.body.setImmovable(true)
-        });
-        this.physics.add.collider(this.player, this.doors);
-    }
-    //CREATE COINS
-    createCoins(objLayer) {
-        this.coins = this.physics.add.group();
-        objLayer.objects.forEach(obj => {
-            let img = this.coins.create(obj.x, obj.y, 'coin');
-            img.setOrigin(0, 1);
-            img.setDisplaySize(obj.width, obj.height);
-            this.coinsID.set(obj.name, img);
-            img.body.setAllowGravity(false);
-            img.body.setImmovable(true);
-            img.play('coinSpin', true);
-        });
-        this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
-    }
-
 
     // CREATE PORTAL
 
@@ -312,25 +270,10 @@ export default class BaseLevel extends Phaser.Scene {
             let img = this.portals.create(obj.x, obj.y, 'portal');
             img.setOrigin(0, 1);
             img.setDisplaySize(obj.width, obj.height);
-            this.portalID.set(obj.name, img);
             img.body.setAllowGravity(false);
             img.body.setImmovable(true)
         });
         this.physics.add.overlap(this.player, this.portals, this.nextLevel, null, this);
-    }
-
-    // CREATE BONE
-    createBone(objLayer) {
-        this.bones = this.physics.add.group();
-        objLayer.objects.forEach(obj => {
-            let img = this.bones.create(obj.x, obj.y, 'bone');
-            img.setOrigin(0, 1);
-            img.setDisplaySize(obj.width, obj.height);
-            this.boneID.set(obj.name, img);
-            img.body.setAllowGravity(false);
-            img.body.setImmovable(true)
-            this.physics.add.overlap(this.player, this.bones, (player, bone) => { this.collectBone(player, bone, obj) }, null, this);
-        });
     }
 
     // NEXT LEVEL

@@ -17,6 +17,10 @@ export class Level1 extends BaseLevel {
         this.levelText = this.add.text(1700, 16, 'Starter', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
     }
+    update(timer, delta) {
+        super.update(timer, delta)
+        this.objMovement('platform', 'plat1', 'horizontal', 0.001, 1500, delta);
+    }
 
 }
 
@@ -42,14 +46,14 @@ export class Level2 extends BaseLevel {
 
     update(time, delta) {
         super.update(time, delta);
-        this.platformMovement('plat1', 'horizontal', 0.003, 1000, delta);
-        this.platformMovement('plat2', 'horizontal', 0.003, 1000, delta);
-        this.platformMovement('plat3', 'vertical', 0.003, 1000, delta);
-        this.platformMovement('plat4', 'horizontal', 0.003, 1000, delta);
-        this.platformMovement('plat5', 'horizontal', 0.003, 1000, delta);
-        this.platformMovement('plat6', 'vertical', 0.003, 1000, delta);
-        this.platformMovement('plat7', 'horizontal', 0.003, 1000, delta);
-        this.platformMovement('plat8', 'vertical', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat1', 'horizontal', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat2', 'horizontal', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat3', 'vertical', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat4', 'horizontal', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat5', 'horizontal', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat6', 'vertical', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat7', 'horizontal', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat8', 'vertical', 0.003, 1000, delta);
 
     }
 
@@ -74,8 +78,9 @@ export class Level3 extends BaseLevel {
     }
     update(time, delta) {
         super.update(time, delta)
-        this.platformMovement('plat6', 'vertical', 0.003, 1000, delta);
-        this.platformMovement('plat7', 'horizontal', 0.004, 1000, delta);
+        this.objMovement('platform', 'plat6', 'vertical', 0.003, 1000, delta);
+        this.objMovement('platform', 'plat7', 'horizontal', 0.004, 1000, delta);
+        this.objMovement('spike', 'spike1', 'vertical', 0.003, 1000, delta);
     }
 
 }
@@ -104,7 +109,6 @@ export class Level4 extends BaseLevel {
     }
 
 }
-
 export class Level5 extends BaseLevel {
 
     constructor() {
@@ -118,20 +122,20 @@ export class Level5 extends BaseLevel {
     create() {
         super.createLayout('level5')
         super.create();
-        this.levelText = this.add.text(1500, 16, 'Little Harder', { fontSize: '42px', fill: '#ff0' });
+        this.levelText = this.add.text(1500, 16, 'ZOOM', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
+        this.cameras.main.startFollow(this.player);
+        this.cameras.main.setZoom(3);
+        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
     }
 
     update(time, delta) {
         super.update(time, delta)
-        this.platformMovement('plat5', 'vertical', 0.0015, 1000, delta);
-        this.platformMovement('plat8', 'circular', 0.0015, 1200, delta);
-        this.platformMovement('plat7', 'vertical', 0.001, 1600, delta);
-
+        this.objMovement('platform', 'plat8', 'circular', 0.001, 1500, delta);
+        this.objMovement('platform', 'plat5', 'horizontal', 0.001, 1400, delta);
     }
 }
-
 export class Level6 extends BaseLevel {
 
     constructor() {
@@ -140,26 +144,22 @@ export class Level6 extends BaseLevel {
     }
 
     preload() {
-        this.load.tilemapTiledJSON('level6', 'assets/levelsData/layout4.json');
+        this.load.tilemapTiledJSON('level6', 'assets/levelsData/layout5.json');
     }
     create() {
         super.createLayout('level6')
         super.create();
-        this.levelText = this.add.text(1500, 16, 'ZOOM', { fontSize: '42px', fill: '#ff0' });
+        this.levelText = this.add.text(1500, 16, 'Little Harder', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
-        this.cameras.main.startFollow(this.player);
-        this.cameras.main.setZoom(3);
-        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-        console.log()
-        this.boneID.get('bone1').setPosition(900, 850)
-        this.coinsID.get('coin5').setPosition(1750, 100)
 
     }
 
     update(time, delta) {
         super.update(time, delta)
-        this.platformMovement('plat8', 'circular', 0.001, 1500, delta);
-        this.platformMovement('plat5', 'horizontal', 0.001, 1400, delta);
+        this.objMovement('platform', 'plat5', 'vertical', 0.0015, 1000, delta);
+        this.objMovement('platform', 'plat8', 'circular', 0.0015, 1200, delta);
+        this.objMovement('platform', 'plat7', 'vertical', 0.001, 1600, delta);
+
     }
 }
 
@@ -171,28 +171,61 @@ export class Level7 extends BaseLevel {
     }
 
     preload() {
-        this.load.tilemapTiledJSON('level6', 'assets/levelsData/layout4.json');
+        this.load.tilemapTiledJSON('level7', 'assets/levelsData/layout6.json');
     }
     create() {
-        super.createLayout('level6')
+        this.timerLevel = 40000
+        super.createLayout('level7')
         super.create();
-        this.levelText = this.add.text(1500, 16, 'ZOOM', { fontSize: '42px', fill: '#ff0' });
+        this.levelText = this.add.text(1500, 16, 'FASTER', { fontSize: '42px', fill: '#ff0' });
+        this.timerLevelText = this.add.text(900, 425, '', { fontSize: '64px', fill: 'rgb(255, 0, 128)' });
         this.registry.set('level', this.scene.key);
-        this.cameras.main.startFollow(this.player);
-        this.cameras.main.setZoom(3);
-        this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-        console.log()
-        this.boneID.get('bone1').setPosition(900, 850)
-        this.coinsID.get('coin5').setPosition(1750, 100)
-
-
-
     }
 
     update(time, delta) {
         super.update(time, delta)
-        this.platformMovement('plat8', 'circular', 0.001, 1500, delta);
-        this.platformMovement('plat5', 'horizontal', 0.001, 1400, delta);
+        this.timerLevel -= delta;
+        const seconds = Math.max(0, this.timerLevel / 1000);
+        this.timerLevelText.setText(seconds.toFixed(1))
+        if (this.timerLevel <= 0) {
+            this.scene.pause()
+            this.scene.launch('GameOver', 'loser');
+        }
+        this.objMovement('platform', 'plat8', 'vertical', 0.005, 1000, delta);
+        this.objMovement('platform', 'plat5', 'horizontal', 0.0015, 1800, delta);
+        this.objMovement('platform', 'plat5', 'vertical', 0.0015, 1800, delta);
+        this.objMovement('platform', 'plat4', 'horizontal', 0.0015, 1800, delta);
+        this.objMovement('platform', 'plat4', 'vertical', 0.0015, -1800, delta);
+        this.objMovement('platform', 'plat4', 'vertical', 0.0015, -1800, delta);
+
+
+
+    }
+}
+
+export class Level8 extends BaseLevel {
+
+    constructor() {
+        super({ key: "Level8" });
+        this.levelText;
+    }
+
+    preload() {
+        this.load.tilemapTiledJSON('level8', 'assets/levelsData/layout7.json');
+    }
+    create() {
+        super.createLayout('level8')
+        super.create();
+        this.levelText = this.add.text(1500, 16, 'Almost Over', { fontSize: '42px', fill: '#ff0' });
+        this.registry.set('level', this.scene.key);
+        this.platforms.getChildren().forEach(plat => {
+            plat.body.setAllowGravity(true)
+            console.log(plat.getData('ID'))
+        })
+    }
+
+    update(time, delta) {
+        super.update(time, delta)
     }
     nextLevel() {
         this.scene.start('GameOver', 'winner');

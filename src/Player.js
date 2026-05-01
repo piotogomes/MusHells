@@ -62,7 +62,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         if (onWallLeft || onWallRight) {
-            if (controls.jump.isDown) {
+            if (controls.up.isDown) {
                 this.setVelocityY(-1);
             } else {
                 this.setVelocityY(speed / 5);
@@ -157,5 +157,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.time.delayedCall(this.dashCooldown, () => {
             this.canDash = true;
         }, [], this);
+    }
+
+    takeDamage(obj) {
+        this.setPosition(150, 700)
     }
 }

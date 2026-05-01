@@ -13,10 +13,11 @@ export default class GameOver extends Phaser.Scene {
         if (data === 'winner') {
             this.winnerScreen()
         }
-        else if (data === 'loser'){
+        else if (data === 'loser') {
             this.gameOverScreen()
         }
-    
+        data = undefined;
+
     }
 
     winnerScreen() {
@@ -58,6 +59,9 @@ export default class GameOver extends Phaser.Scene {
             this.registry.set('score', JSON.parse(localStorage.getItem('save')).score);
             this.registry.set('life', JSON.parse(localStorage.getItem('save')).life);
             this.scene.start(this.registry.get('level'));
+        });
+        this.input.keyboard.on('keydown-R', () => {
+            this.retryBtn.emit('pointerdown');
         });
 
         this.mainMenu.add([this.gameOverText, this.exitBtn, this.retryBtn]);

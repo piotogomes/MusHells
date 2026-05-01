@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import Boot from './Boot'
 import Pause from './Pause'
 import Start from './Start'
-import { Level1, Level2, Level3, Level4, Level5, Level6, Level7 } from './Levels';
+import { Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8 } from './Levels';
 import GameOver from './GameOver'
 
 let config = {
@@ -23,7 +23,7 @@ let config = {
             fixedStep: true
         }
     },
-    scene: [Boot, Start, Level1, Level2, Level3, Level4, Level5, Level6, Level7, Pause, GameOver],
+    scene: [Boot, Start, Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Pause, GameOver],
 
     scale: {
         mode: Phaser.Scale.FIT,
