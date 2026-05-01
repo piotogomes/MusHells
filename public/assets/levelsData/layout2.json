@@ -249,7 +249,7 @@
                  "gid":3,
                  "height":73.3333333333333,
                  "id":83,
-                 "name":"door1",
+                 "name":"1",
                  "properties":[
                         {
                          "name":"Link",
@@ -456,7 +456,7 @@
                  "gid":2,
                  "height":32,
                  "id":84,
-                 "name":"bone1",
+                 "name":"1",
                  "properties":[
                         {
                          "name":"Link",

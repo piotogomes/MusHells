@@ -111,9 +111,9 @@ export default class BaseLevel extends Phaser.Scene {
         });
 
         // for debug
-        this.input.keyboard.on('keydown-P', () => {
-            this.nextLevel()
-        });
+        // this.input.keyboard.on('keydown-P', () => {
+        //     this.nextLevel()
+        // });
 
 
     }
