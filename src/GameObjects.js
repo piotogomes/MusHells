@@ -120,7 +120,6 @@ export class Platforms extends Phaser.Physics.Arcade.Group {
             img.body.setAllowGravity(false);
             img.body.setImmovable(true)
             img.body.setFriction(1, 1);
-            console.log(obj.name)
             img.setData('Timer', 0);
             img.setData('ID', obj.name)
 

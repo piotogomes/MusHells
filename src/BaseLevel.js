@@ -51,8 +51,8 @@ export default class BaseLevel extends Phaser.Scene {
 
         this.bones = new Bones(this, this.bonesData)
         this.physics.add.overlap(this.player, this.bones, (player, bone) => {
-            this.doors.getChildren().find(door => {
-
+            this.doors.getChildren().forEach(door => {
+                console.log(door)
                 if (door.getData('ID') === bone.getData('ID')) {
                     this.doors.open(door)
                 }
@@ -110,10 +110,10 @@ export default class BaseLevel extends Phaser.Scene {
             this.setControls(value.controls);
         });
 
-        // for debug
-        // this.input.keyboard.on('keydown-P', () => {
-        //     this.nextLevel()
-        // });
+        //for debug
+        this.input.keyboard.on('keydown-P', () => {
+            this.nextLevel()
+        });
 
 
     }
