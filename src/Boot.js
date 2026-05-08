@@ -50,21 +50,21 @@ export default class Boot extends Phaser.Scene {
         //  Our player animations, turning, walking left and walking right.
         this.anims.create({
             key: 'left',
-            frames: this.anims.generateFrameNumbers('player_left', { coint: 0, end: 3 }),
+            frames: this.anims.generateFrameNumbers('player_left', { end: 3 }),
             frameRate: 10,
             repeat: -1
         });
 
         this.anims.create({
             key: 'turn',
-            frames: this.anims.generateFrameNumbers('player_idle', { coint: 0, end: 1 }),
+            frames: this.anims.generateFrameNumbers('player_idle', { end: 1 }),
             frameRate: 3,
             repeat: -1
         });
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('player_right', { coint: 0, end: 3 }),
+            frames: this.anims.generateFrameNumbers('player_right', { end: 3 }),
             frameRate: 10,
             repeat: -1
         });
