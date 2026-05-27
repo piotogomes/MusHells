@@ -2,21 +2,50 @@ export class Coins extends Phaser.Physics.Arcade.Group {
 
 
     constructor(scene, data) {
+
         super(scene.physics.world, scene)
         data.objects.forEach(obj => {
             let img = this.create(obj.x, obj.y, 'coin');
-            img.setOrigin(0, 1);
+            img.setOrigin(0.5, 0.5);
             img.setDisplaySize(obj.width, obj.height);
             img.body.setAllowGravity(false);
             img.body.setImmovable(true);
             img.setData('ID', obj.name);
-            img.play('coinSpin', true);
         });
+        this.scene.add.tween({
+            targets: this.getChildren(),
+            scaleX: -2,
+            ease: 'Sine.easeInOut',
+            duration: 500,
+            repeat: -1,
+            yoyo: true,
+            onRepeat: () => {
+                this.scene.time.delayedCall(250, () => {
+                    this.getChildren().forEach(coin => {
+                        coin.body.setOffset(coin.width, 0);
+                    });
+                })
+                this.scene.time.delayedCall(750, () => {
+                    this.getChildren().forEach(coin => {
+                        coin.body.setOffset(0, 0);
+                    });
+                })
+            },
+        })
+        this.scene.add.tween({
+            targets: this.getChildren(),
+            y: "-=40",
+            ease: 'Sine.easeInOut',
+            duration: 1000,
+            repeat: -1,
+            yoyo: true
+        })
 
     }
 
     collect(coin) {
-        coin.destroy();
+        coin.disableBody();
+        coin.setVisible(false)
     }
 }
 

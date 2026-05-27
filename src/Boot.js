@@ -34,7 +34,6 @@ export default class Boot extends Phaser.Scene {
         this.load.image('platformBone', 'assets/platformBone.png');
         this.load.image('platform', 'assets/platform.png');
         this.load.image('coin', 'assets/coin.png');
-        this.load.image('sideCoin', 'assets/sideCoin.png');
         this.load.image('door', 'assets/door.png');
         this.load.image('bone', 'assets/bone.png');
         this.load.image('portal', 'assets/portal.png');
@@ -66,16 +65,6 @@ export default class Boot extends Phaser.Scene {
             key: 'right',
             frames: this.anims.generateFrameNumbers('player_right', { end: 3 }),
             frameRate: 10,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'coinSpin',
-            frames: [
-                { key: 'coin' },
-                { key: 'sideCoin' }
-            ],
-            frameRate: 3,
             repeat: -1
         });
 
