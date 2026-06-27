@@ -83,7 +83,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             }
         }
         if (this.body.onFloor()) {
-            this.jumps = 2;
+            this.jumps = 1;
         }
         if (Phaser.Input.Keyboard.JustDown(controls.jump)) {
             if (this.body.onFloor()) {

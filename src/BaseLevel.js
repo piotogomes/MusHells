@@ -1,5 +1,5 @@
 import Player from './Player.js';
-import { Coins, Doors, Bones, Spikes, Platforms } from './GameObjects.js';
+import { Coins, Doors, Bones, Spikes, Platforms, Fireballs } from './GameObjects.js';
 export default class BaseLevel extends Phaser.Scene {
 
     constructor(config) {
@@ -26,7 +26,6 @@ export default class BaseLevel extends Phaser.Scene {
 
     create() {
         this.createBG()
-
 
         this.scoreText = this.add.text(16, 16, `Score: ${this.registry.get('score')}`, { fontSize: '24px', fill: '#fff' });
         this.lifeText = this.add.text(16, 40, `Life: ${this.registry.get('life')}`, { fontSize: '24px', fill: '#fff' });
@@ -168,9 +167,8 @@ export default class BaseLevel extends Phaser.Scene {
             obj.body.setVelocityY(velocityValue);
         }
         if (type === 'circular') {
-            const vel = Math.sin(t * freq) * (range * freq * 100);
             obj.body.setVelocityX(velocityValue);
-            obj.body.setVelocityY(vel);
+            obj.body.setVelocityY(Math.sin(t * freq) * (range * freq * 100));
         }
     }
 

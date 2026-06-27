@@ -8,9 +8,8 @@ export default class Start extends Phaser.Scene {
 
     preload() {
         this.add.image(950, 460, 'startBG').setAlpha(0.2);
-        this.logo = this.add.image(950, 260, 'logo').setAlpha(2);
-        const fx = this.logo.preFX.addColorMatrix();
-        fx.brightness(2);
+        this.logo = this.add.image(950, 260, 'logo');
+
 
     }
 

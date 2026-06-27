@@ -1,4 +1,5 @@
 import BaseLevel from "./BaseLevel";
+import { Fireballs } from "./GameObjects";
 import Player from "./Player";
 
 export class Level1 extends BaseLevel {
@@ -176,7 +177,7 @@ export class Level7 extends BaseLevel {
         super.createLayout('level7')
         super.create();
         this.levelText = this.add.text(1500, 16, 'FASTER', { fontSize: '42px', fill: '#ff0' });
-        this.timerLevelText = this.add.text(900, 425, '', { fontSize: '64px', fill: 'rgb(255, 0, 128)' });
+        this.timerLevelText = this.add.text(850, 425, '', { fontSize: '64px', fill: 'rgb(255, 0, 128)' });
         this.registry.set('level', this.scene.key);
     }
 
@@ -219,7 +220,7 @@ export class Level8 extends BaseLevel {
         this.platforms.getChildren().forEach(plat => {
             if (plat.getData('ID').at(-1) > 5) {
                 this.physics.add.collider(this.player, plat, (player, plat) => {
-                        this.time.delayedCall(200, () => {
+                        this.time.delayedCall(100, () => {
                             plat.body.setAllowGravity(true); 
                         });
                     
@@ -228,6 +229,38 @@ export class Level8 extends BaseLevel {
             }
 
         })
+    }
+
+    update(time, delta) {
+        super.update(time, delta)
+        this.objMovement('platform', 'plat4', 'horizontal', 0.0005, -5000, delta);
+        this.objMovement('platform', 'plat1', 'circular', 0.0025, 1300, delta);
+        this.objMovement('spike', 'spike1', 'vertical', 0.0015, 900, delta);
+        this.objMovement('spike', 'spike2', 'vertical', 0.0015, 1500, delta);
+        this.objMovement('spike', 'spike3', 'vertical', 0.0015, 1500, delta);
+        this.objMovement('spike', 'spike4', 'vertical', 0.0015, 900, delta);
+
+
+    }
+}
+
+export class Level9 extends BaseLevel {
+
+    constructor() {
+        super({ key: "Level9" });
+        this.levelText;
+    }
+
+    preload() {
+        this.load.tilemapTiledJSON('level9', 'assets/levelsData/layout8.json');
+    }
+    create() {
+        super.createLayout('level9')
+        super.create();
+        this.levelText = this.add.text(1500, 16, 'Fireballs', { fontSize: '42px', fill: '#ff0' });
+        this.registry.set('level', this.scene.key);
+        this.fireballsData = this.map.getObjectLayer('fireball');
+        this.fireballs = new Fireballs(this.scene, this.fireballsData) ;
     }
 
     update(time, delta) {

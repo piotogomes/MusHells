@@ -34,7 +34,7 @@ export class Coins extends Phaser.Physics.Arcade.Group {
         })
         this.scene.add.tween({
             targets: this.getChildren(),
-            y: "-=40",
+            y: "-=20",
             ease: 'Sine.easeInOut',
             duration: 1000,
             repeat: -1,
@@ -153,5 +153,24 @@ export class Platforms extends Phaser.Physics.Arcade.Group {
             img.setData('ID', obj.name)
 
         });
+    }
+}
+
+export class Fireballs extends Phaser.Physics.Arcade.Group {
+    constructor(scene, data) {
+        super(scene.physics.world, scene)
+        data.objects.forEach(obj => {
+            let img = this.create(obj.x, obj.y, 'fireball');
+            img.setScale((obj.width / img.width), (obj.height / img.height))
+            img.setOrigin(0, 1);
+            img.body.setAllowGravity(true);
+            img.body.setImmovable(true)
+            img.setData('Timer', 0);
+            img.setData('ID', obj.name)
+        });
+    }
+
+    movement(delta) {
+        this.
     }
 }
