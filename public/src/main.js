@@ -28,6 +28,9 @@ let config = {
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+        parent: document.body, 
+        // Força a recalcular as dimensões quando a janela mexe
+        expandParent: true,
         min: {
             width: 800,
             height: 600

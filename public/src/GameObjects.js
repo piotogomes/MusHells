@@ -1,3 +1,5 @@
+import Phaser from 'phaser';
+
 export class Coins extends Phaser.Physics.Arcade.Group {
 
 
@@ -168,9 +170,5 @@ export class Fireballs extends Phaser.Physics.Arcade.Group {
             img.setData('Timer', 0);
             img.setData('ID', obj.name)
         });
-    }
-
-    movement(delta) {
-        this.
     }
 }

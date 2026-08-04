@@ -1,4 +1,6 @@
 import Player from './Player.js';
+import Phaser from 'phaser';
+
 import { Coins, Doors, Bones, Spikes, Platforms, Fireballs } from './GameObjects.js';
 export default class BaseLevel extends Phaser.Scene {
 
@@ -51,7 +53,6 @@ export default class BaseLevel extends Phaser.Scene {
         this.bones = new Bones(this, this.bonesData)
         this.physics.add.overlap(this.player, this.bones, (player, bone) => {
             this.doors.getChildren().forEach(door => {
-                console.log(door)
                 if (door.getData('ID') === bone.getData('ID')) {
                     this.doors.open(door)
                 }
@@ -290,7 +291,7 @@ export default class BaseLevel extends Phaser.Scene {
             timer: this.registry.get('timer')
         };
         const gameDataStr = JSON.stringify(gameData);
-        const ass = CryptoJS.HmacSHA256(gameDataStr, 'popo').toString();
+        const ass = CryptoJS.HmacSHA256(gameDataStr, '31T5').toString();
         localStorage.setItem('save', gameDataStr);
         localStorage.setItem('saveAss', ass);
     }
@@ -303,7 +304,7 @@ export default class BaseLevel extends Phaser.Scene {
 
     resumeGame() {
         this.scene.stop(); // Congela a física e o update desta cena
-        this.scene.launch(this.scene); // Roda a cena de pause por cima
+        this.scene.launch(this.scene); 
     }
 }
 

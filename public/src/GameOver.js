@@ -1,3 +1,6 @@
+import Phaser from 'phaser';
+
+
 export default class GameOver extends Phaser.Scene {
 
 
@@ -7,6 +10,7 @@ export default class GameOver extends Phaser.Scene {
 
     preload() {
         // this.load.image('gameOverMenu', 'assets/gameOverMenu.png');
+        this.load.json('flag', '/api/game-config');
     }
 
     create(data) {
@@ -21,13 +25,24 @@ export default class GameOver extends Phaser.Scene {
     }
 
     winnerScreen() {
+        console.log(`${this.registry.get('score')}`)
+
+        if (this.registry.get('score') === 67) {
+            const config = this.cache.json.get('flag');
+            const flagText = config?.flag;
+            this.add.text(950, 200, flagText, {
+                fontSize: '48px',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+        }
         this.add.text(950, 300, "YOU PASSED!!", { fontSize: '82px', fill: '#25dd15' }).setOrigin(0.5);
         this.add.text(950, 350, 'for now....', { fontSize: '16px', fill: '#b80e0e' }).setOrigin(0.5);
         this.add.text(950, 420, `Highscore: ${this.registry.get('score') + this.registry.get('life') * 50}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);
         this.add.text(950, 480, `Time: ${this.registry.get('timer').toFixed(1)}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);
         this.add.text(950, 580, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '36px', fill: '#b8190e' }).setOrigin(0.5);
         if (this.registry.get('deaths') === 0) {
-            this.add.text(950, 650, 'OMGGG DEATHLESS!!! now do it blindfold', { fontSize: '42px', fill: '#fcf807' }).setOrigin(0.5);
+            this.add.text(950, 650, 'OMG DEATHLESS!!! now do it blindfold', { fontSize: '42px', fill: '#fcf807' }).setOrigin(0.5);
         }
 
 

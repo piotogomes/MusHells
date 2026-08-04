@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 
 export default class Start extends Phaser.Scene {
 
@@ -35,7 +36,7 @@ export default class Start extends Phaser.Scene {
         this.loadBtn = this.add.text(950, 800, "Load", { fontSize: '36px', fill: '#fff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         this.loadBtn.on('pointerdown', () => {
             const savedData = localStorage.getItem('save');
-            if (localStorage.getItem('saveAss') === CryptoJS.HmacSHA256(localStorage.getItem('save'), 'popo').toString()) {
+            if (localStorage.getItem('saveAss') === CryptoJS.HmacSHA256(localStorage.getItem('save'), '31T5').toString()) {
                 this.registry.set('score', JSON.parse(savedData).score);
                 this.registry.set('level', JSON.parse(savedData).level);
                 this.registry.set('life', JSON.parse(savedData).life);

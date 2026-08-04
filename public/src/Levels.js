@@ -1,6 +1,5 @@
 import BaseLevel from "./BaseLevel";
 import { Fireballs } from "./GameObjects";
-import Player from "./Player";
 
 export class Level1 extends BaseLevel {
 
@@ -220,10 +219,10 @@ export class Level8 extends BaseLevel {
         this.platforms.getChildren().forEach(plat => {
             if (plat.getData('ID').at(-1) > 5) {
                 this.physics.add.collider(this.player, plat, (player, plat) => {
-                        this.time.delayedCall(100, () => {
-                            plat.body.setAllowGravity(true); 
-                        });
-                    
+                    this.time.delayedCall(100, () => {
+                        plat.body.setAllowGravity(true);
+                    });
+
                 }, null, this);
 
             }
@@ -241,6 +240,9 @@ export class Level8 extends BaseLevel {
         this.objMovement('spike', 'spike4', 'vertical', 0.0015, 900, delta);
 
 
+    }
+    nextLevel() {
+        this.scene.start('GameOver', 'winner');
     }
 }
 
@@ -260,7 +262,7 @@ export class Level9 extends BaseLevel {
         this.levelText = this.add.text(1500, 16, 'Fireballs', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
         this.fireballsData = this.map.getObjectLayer('fireball');
-        this.fireballs = new Fireballs(this.scene, this.fireballsData) ;
+        this.fireballs = new Fireballs(this.scene, this.fireballsData);
     }
 
     update(time, delta) {

@@ -1,4 +1,6 @@
-export default class Player extends Phaser.Physics.Arcade.Sprite {
+import Phaser from 'phaser';
+
+export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     dashTimer = 250;
     dashCooldown = 1500;
