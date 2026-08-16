@@ -9,12 +9,12 @@ export default class GameOver extends Phaser.Scene {
     }
 
     preload() {
-        // this.load.image('gameOverMenu', 'assets/gameOverMenu.png');
-        this.load.json('flag', '/api/admin');
+
     }
 
-    create(data) {
+    async create(data) {
         if (data === 'winner') {
+            await this.postTheFlag();
             this.winnerScreen()
         }
         else if (data === 'loser') {
@@ -24,42 +24,10 @@ export default class GameOver extends Phaser.Scene {
 
     }
 
-    winnerScreen() {
-        console.log(`${this.registry.get('score')}`)
-
-if (this.registry.get('score') === 67) {
-    // 1. Envia a pontuação/evento para o backend
-    fetch('/api/claim-flag', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            score: this.registry.get('score')
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Falha ao validar pontuação');
-        }
-        return response.json();
-    })
-    .then(data => {
-        const flagText = data.flag;
-
-        this.add.text(950, 200, flagText, {
-            fontSize: '48px',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-    })
-    .catch(error => {
-        console.error('Erro ao resgatar flag:', error);
-    });
-}
+    async winnerScreen() {
         this.add.text(950, 300, "YOU PASSED!!", { fontSize: '82px', fill: '#25dd15' }).setOrigin(0.5);
         this.add.text(950, 350, 'for now....', { fontSize: '16px', fill: '#b80e0e' }).setOrigin(0.5);
-        this.add.text(950, 420, `Highscore: ${this.registry.get('score') + this.registry.get('life') * 50}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);
+        this.add.text(950, 420, `Highscore: ${this.registry.get('score') + this.registry.get('life') * 5}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);
         this.add.text(950, 480, `Time: ${this.registry.get('timer').toFixed(1)}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);
         this.add.text(950, 580, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '36px', fill: '#b8190e' }).setOrigin(0.5);
         if (this.registry.get('deaths') === 0) {
@@ -101,5 +69,27 @@ if (this.registry.get('score') === 67) {
         });
 
         this.mainMenu.add([this.gameOverText, this.exitBtn, this.retryBtn]);
+    }
+    async postTheFlag() {
+        const sessionId = this.registry.get('sessionId');
+
+        try {
+            const res = await fetch('/api/game-over', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId })
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.flag) {
+                this.add.text(950, 200, data.flag, {
+                    fontSize: '48px',
+                    color: '#00ff00'
+                }).setOrigin(0.5);
+            }
+        } catch (err) {
+            console.error('Erro ao finalizar o jogo:', err);
+        }
     }
 }
