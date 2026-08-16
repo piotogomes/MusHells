@@ -10,7 +10,7 @@ export default class GameOver extends Phaser.Scene {
 
     preload() {
         // this.load.image('gameOverMenu', 'assets/gameOverMenu.png');
-        this.load.json('flag', '/api/game-config');
+        this.load.json('flag', '/api/admin');
     }
 
     create(data) {
@@ -27,15 +27,36 @@ export default class GameOver extends Phaser.Scene {
     winnerScreen() {
         console.log(`${this.registry.get('score')}`)
 
-        if (this.registry.get('score') === 67) {
-            const config = this.cache.json.get('flag');
-            const flagText = config?.flag;
-            this.add.text(950, 200, flagText, {
-                fontSize: '48px',
-                color: '#ffffff',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
+if (this.registry.get('score') === 67) {
+    // 1. Envia a pontuação/evento para o backend
+    fetch('/api/claim-flag', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            score: this.registry.get('score')
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Falha ao validar pontuação');
         }
+        return response.json();
+    })
+    .then(data => {
+        const flagText = data.flag;
+
+        this.add.text(950, 200, flagText, {
+            fontSize: '48px',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+    })
+    .catch(error => {
+        console.error('Erro ao resgatar flag:', error);
+    });
+}
         this.add.text(950, 300, "YOU PASSED!!", { fontSize: '82px', fill: '#25dd15' }).setOrigin(0.5);
         this.add.text(950, 350, 'for now....', { fontSize: '16px', fill: '#b80e0e' }).setOrigin(0.5);
         this.add.text(950, 420, `Highscore: ${this.registry.get('score') + this.registry.get('life') * 50}`, { fontSize: '36px', fill: '#5bb80e' }).setOrigin(0.5);

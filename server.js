@@ -1,21 +1,52 @@
 import express from 'express';
 import ViteExpress from 'vite-express';
-import path from 'path';
 
 const app = express();
 app.use(express.json());
 
 app.use(express.static('dist'));
 
-app.get('/api/game-config', (req, res) => {
-  res.json({
-    flag: "eits flag"
-  });
+// Defina a sua senha secreta de admin aqui
+const ADMIN_SECRET = 'aqui é eits bro';
+
+// Middleware simples: confere se a senha foi enviada no Header
+function protegerAdmin(req, res, next) {
+  const chaveEnviada = req.headers['adminkey'];
+
+  if (chaveEnviada === ADMIN_SECRET) {
+    return next(); // Senha correta! Libera o acesso
+  }
+
+  return res.status(403).json({ error: 'Acesso negado.' });
+}
+
+// Segredo guardado apenas no servidor (ex: variável de ambiente)
+const SECRET_FLAG = process.env.FLAG || 'FLAG{esit}';
+
+app.post('/api/claim-flag', (req, res) => {
+    const { score } = req.body;
+
+    // Validação no servidor
+    if (score === 67) {
+        return res.json({ 
+            success: true, 
+            flag: SECRET_FLAG 
+        });
+    }
+
+    return res.status(400).json({ 
+        success: false, 
+        error: 'Pontuação inválida' 
+    });
 });
 
 ViteExpress.listen(app, 3000, () => {
   console.log('🎮 Server running at http://localhost:3000');
 });
+
+
+
+
 
 /* 
 Fazer isso no level 8

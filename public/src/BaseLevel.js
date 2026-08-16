@@ -67,7 +67,7 @@ export default class BaseLevel extends Phaser.Scene {
         })
 
         this.createLava(this.lavaData)
-        
+
         this.spikes = new Spikes(this, this.spikeData)
         this.spikes.getChildren().forEach((spike) => {
             this.spikeMap.set(spike.getData('ID'), spike);
@@ -111,8 +111,11 @@ export default class BaseLevel extends Phaser.Scene {
         });
 
         //for debug
-        this.input.keyboard.on('keydown-P', () => {
-            this.nextLevel()
+        const combo = this.input.keyboard.createCombo(['S', 'P', 'E', 'E', 'D'], { resetOnMatch: true });
+
+        this.input.keyboard.on('keycombomatch', (event) => {
+            this.nextLevel();
+            console.log("fraco");
         });
 
 
@@ -304,7 +307,7 @@ export default class BaseLevel extends Phaser.Scene {
 
     resumeGame() {
         this.scene.stop(); // Congela a física e o update desta cena
-        this.scene.launch(this.scene); 
+        this.scene.launch(this.scene);
     }
 }
 
