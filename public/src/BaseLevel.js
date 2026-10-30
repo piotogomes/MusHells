@@ -28,6 +28,14 @@ export default class BaseLevel extends Phaser.Scene {
 
 
     create() {
+
+        this.input.keyboard.on('keydown-R', () => {
+            // this.registry.set('score', JSON.parse(localStorage.getItem('save')).score);
+            // this.registry.set('life', JSON.parse(localStorage.getItem('save')).life);
+            // this.scene.restart();
+            this.nextLevel();
+        });
+
         this.createBG()
 
         this.scoreText = this.add.text(16, 16, `Score: ${this.registry.get('score')}`, { fontSize: '24px', fill: '#fff' });
@@ -35,6 +43,33 @@ export default class BaseLevel extends Phaser.Scene {
         this.deathCounter = this.add.text(16, 66, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '24px', fill: '#b8190e' });
 
 
+        this.coins = new Coins(this, this.coinsData)
+        this.physics.add.overlap(this.player, this.coins, async (player, coin) => {
+            coin.disableBody(true, true);
+
+            const sessionId = this.registry.get('sessionId');
+            const coinId = coin.getData('ID');
+
+            try {
+                const response = await fetch('/api/collect-coin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, coinId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualiza com a pontuação autoritativa do servidor
+                    this.registry.set('score', data.newScore);
+                    this.scoreText.setText('Score: ' + data.newScore);
+                } else {
+                    coin.enableBody(true, coin.x, coin.y, true, true);
+                }
+            } catch (err) {
+                coin.enableBody(true, coin.x, coin.y, true, true);
+            }
+        }, null, this);
 
         this.coins = new Coins(this, this.coinsData)
         this.doors = new Doors(this, this.doorsData)
@@ -54,9 +89,59 @@ export default class BaseLevel extends Phaser.Scene {
         })
 
         this.physics.add.collider(this.spikes, this.platforms, null, null, this);
-        this.createLava(this.lavaData)
+        this.physics.add.collider(this.player, this.platforms, null, null, this);
+
+        const dmgObjects = [this.lava, this.spikes]
 
 
+        // this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
+        //     this.registry.inc('life', -1);
+        //     this.registry.inc('deaths', 1);
+        //     this.player.takeDamage(obj);
+        //     this.lifeText.setText('Life: ' + this.registry.get('life'));
+        //     this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
+        // }, null, this);
+
+        this.physics.add.overlap(this.player, dmgObjects, async (player, obj) => {
+            // Evita múltiplos registros se o jogador já estiver em estado de dano/respawn
+            if (this.player.isInvulnerable) return;
+
+            this.player.isInvulnerable = true;
+            const sessionId = this.registry.get('sessionId');
+
+            try {
+                const response = await fetch('/api/player-damage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualiza com os valores autoritativos do servidor
+                    this.registry.set('life', data.newLife);
+                    this.registry.set('deaths', data.newDeaths);
+
+                    this.lifeText.setText('Life: ' + data.newLife);
+                    this.deathCounter.setText('Deaths: ' + data.newDeaths);
+
+                    // Animação / lógica visual de dano
+                    this.player.takeDamage(obj);
+
+                    if (data.isGameOver) {
+                        this.postTheFlag(); // ou cena de Game Over
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao registrar dano:', err);
+            } finally {
+                // Cooldown de invulnerabilidade (ex: 1 segundo de i-frames)
+                this.time.delayedCall(1000, () => {
+                    this.player.isInvulnerable = false;
+                });
+            }
+        }, null, this);
 
         // this.createPlayer();
         this.createFloor(this.floorData)
@@ -70,23 +155,17 @@ export default class BaseLevel extends Phaser.Scene {
             this.scene.pause();
             this.scene.launch('Pause', 'levels');
         });
-        this.input.keyboard.on('keydown-R', () => {
-            this.registry.set('score', JSON.parse(localStorage.getItem('save')).score);
-            this.registry.set('life', JSON.parse(localStorage.getItem('save')).life);
-            this.scene.restart();
-
-        });
 
         this.registry.events.on('changedata-settings', (parent, value) => {
             this.setControls(value.controls);
         });
 
         //for debug
-        const combo = this.input.keyboard.createCombo(['S', 'P', 'E', 'E', 'D'], { resetOnMatch: true });
+        const combo = this.input.keyboard.createCombo(['R', 'U', 'N'], { resetOnMatch: true });
 
         this.input.keyboard.on('keycombomatch', (event) => {
             this.nextLevel();
-            console.log("fraco");
+            // console.log("fraco");
         });
 
 

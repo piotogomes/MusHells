@@ -10,14 +10,15 @@ export default class Start extends Phaser.Scene {
     preload() {
         this.add.image(950, 460, 'startBG').setAlpha(0.2);
         this.logo = this.add.image(950, 260, 'logo');
-
-
     }
 
-    create() {
+
+
+    async create() {
 
         this.newGameBtn = this.add.text(950, 500, "New Game", { fontSize: '36px', fill: '#fff' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        this.newGameBtn.on('pointerdown', () => {
+        this.newGameBtn.on('pointerdown', async () => {
+            await this.startGame();
             localStorage.removeItem('save');
             this.createNewSave();
             this.scene.start('Level1');
@@ -51,6 +52,17 @@ export default class Start extends Phaser.Scene {
 
 
     }
+    async startGame() {
+        try {
+            const res = await fetch('/api/start-game', { method: 'POST' });
+            const data = await res.json();
+            this.registry.set('sessionId', data.sessionId);
+            this.registry.set('salt', data.salt);
+        } catch (err) {
+            console.error('Erro ao iniciar sessão:', err);
+        }
+    }
+
     createNewSave() {
         let gameData = {
             score: 0,
