@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import Boot from './Boot'
 import Pause from './Pause'
 import Start from './Start'
+import AIManager from './AIManager'
 import { Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8 } from './Levels';
 import GameOver from './GameOver'
 
@@ -23,12 +24,12 @@ let config = {
             fixedStep: true
         }
     },
-    scene: [Boot, Start, Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Pause, GameOver],
+    scene: [Boot, AIManager, Start, Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Pause, GameOver],
 
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        parent: document.body, 
+        parent: document.body,
         // Força a recalcular as dimensões quando a janela mexe
         expandParent: true,
         min: {
