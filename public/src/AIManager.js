@@ -17,7 +17,7 @@ export default class AIManager {
         // Camada Oculta: recebe os 9 inputs e processa em 16 "neurônios"
         model.add(tf.layers.dense({
             units: 16,
-            inputShape: [9],
+            inputShape: [4],
             activation: 'relu'
         }));
 
@@ -72,11 +72,11 @@ export default class AIManager {
 
         // 5. Reseta os players entregando os novos cérebros
         players.forEach((player, index) => {
-            player.reset(150, 750, this.population[index]);
+            player.reset(150, 700, this.population[index]);
         });
     }
 
-    mutate(bestModel, mutationRate = 0.1) {
+    mutate(bestModel, mutationRate = 0.05) {
         return tf.tidy(() => {
             const newModel = this.createModel(); // Cria um modelo zerado
             const weights = bestModel.getWeights(); // Pega os pesos do campeão

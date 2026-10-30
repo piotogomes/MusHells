@@ -40,7 +40,6 @@ export class Level2 extends BaseLevel {
         super.create();
         this.levelText = this.add.text(1600, 16, 'More moves', { fontSize: '42px', fill: '#ff0' });
         this.registry.set('level', this.scene.key);
-        this.player.setCollideWorldBounds(false);
     }
 
     update(time, delta) {

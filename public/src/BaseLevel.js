@@ -1,6 +1,9 @@
 import Player from './Player.js';
+import Utils from './Utils.js';
 import AIManager from './AIManager.js';
 import Phaser from 'phaser';
+
+const POP_SIZE = 50;
 
 import { Coins, Doors, Bones, Spikes, Platforms, Fireballs } from './GameObjects.js';
 export default class BaseLevel extends Phaser.Scene {
@@ -23,7 +26,7 @@ export default class BaseLevel extends Phaser.Scene {
         this.spikeMap = new Map();
         this.timer = this.registry.get('timer')
         this.deaths = this.registry.get('deaths')
-        this.aiManager = new AIManager(this, 50);
+        this.aiManager = new AIManager(this, POP_SIZE);
     }
 
 
@@ -41,35 +44,6 @@ export default class BaseLevel extends Phaser.Scene {
         this.scoreText = this.add.text(16, 16, `Score: ${this.registry.get('score')}`, { fontSize: '24px', fill: '#fff' });
         this.lifeText = this.add.text(16, 40, `Life: ${this.registry.get('life')}`, { fontSize: '24px', fill: '#fff' });
         this.deathCounter = this.add.text(16, 66, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '24px', fill: '#b8190e' });
-
-
-        this.coins = new Coins(this, this.coinsData)
-        this.physics.add.overlap(this.player, this.coins, async (player, coin) => {
-            coin.disableBody(true, true);
-
-            const sessionId = this.registry.get('sessionId');
-            const coinId = coin.getData('ID');
-
-            try {
-                const response = await fetch('/api/collect-coin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId, coinId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Atualiza com a pontuação autoritativa do servidor
-                    this.registry.set('score', data.newScore);
-                    this.scoreText.setText('Score: ' + data.newScore);
-                } else {
-                    coin.enableBody(true, coin.x, coin.y, true, true);
-                }
-            } catch (err) {
-                coin.enableBody(true, coin.x, coin.y, true, true);
-            }
-        }, null, this);
 
         this.coins = new Coins(this, this.coinsData)
         this.doors = new Doors(this, this.doorsData)
@@ -89,65 +63,13 @@ export default class BaseLevel extends Phaser.Scene {
         })
 
         this.physics.add.collider(this.spikes, this.platforms, null, null, this);
-        this.physics.add.collider(this.player, this.platforms, null, null, this);
 
-        const dmgObjects = [this.lava, this.spikes]
-
-
-        // this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
-        //     this.registry.inc('life', -1);
-        //     this.registry.inc('deaths', 1);
-        //     this.player.takeDamage(obj);
-        //     this.lifeText.setText('Life: ' + this.registry.get('life'));
-        //     this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
-        // }, null, this);
-
-        this.physics.add.overlap(this.player, dmgObjects, async (player, obj) => {
-            // Evita múltiplos registros se o jogador já estiver em estado de dano/respawn
-            if (this.player.isInvulnerable) return;
-
-            this.player.isInvulnerable = true;
-            const sessionId = this.registry.get('sessionId');
-
-            try {
-                const response = await fetch('/api/player-damage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Atualiza com os valores autoritativos do servidor
-                    this.registry.set('life', data.newLife);
-                    this.registry.set('deaths', data.newDeaths);
-
-                    this.lifeText.setText('Life: ' + data.newLife);
-                    this.deathCounter.setText('Deaths: ' + data.newDeaths);
-
-                    // Animação / lógica visual de dano
-                    this.player.takeDamage(obj);
-
-                    if (data.isGameOver) {
-                        this.postTheFlag(); // ou cena de Game Over
-                    }
-                }
-            } catch (err) {
-                console.error('Erro ao registrar dano:', err);
-            } finally {
-                // Cooldown de invulnerabilidade (ex: 1 segundo de i-frames)
-                this.time.delayedCall(1000, () => {
-                    this.player.isInvulnerable = false;
-                });
-            }
-        }, null, this);
-
-        // this.createPlayer();
+        this.createLava(this.lavaData)
         this.createFloor(this.floorData)
         this.createPortal(this.portalData)
         this.createInputs()
-        this.createAIPlayers();
+        // this.createPlayer();
+        this.createAIPlayers(POP_SIZE);
 
 
 
@@ -178,7 +100,7 @@ export default class BaseLevel extends Phaser.Scene {
             this.scene.pause()
             this.scene.launch('GameOver', 'loser');
         }
-        //this.player.update(this.activeControls, delta);
+        // this.player.update(this.activeControls, delta);
         this.updateAIPlayers(delta);
         this.registry.inc('timer', delta / 16.6 / 60);
     }
@@ -348,7 +270,7 @@ export default class BaseLevel extends Phaser.Scene {
         localStorage.setItem('saveAss', ass);
     }
 
-    createAIPlayers(popSize = 50) {
+    createAIPlayers(popSize) {
         // 1. Inicializa o AIManager (assuma que já fez import { AIManager } ...)
         this.players = [];
         this.playerGroup = this.physics.add.group(); // Agrupa todos para as colisões
@@ -357,6 +279,7 @@ export default class BaseLevel extends Phaser.Scene {
         for (let i = 0; i < popSize; i++) {
             let brain = this.aiManager.population[i];
             let player = new Player(this, 150, 700, brain);
+            console.log(player);
             player.setAlpha(0.3);
 
             // Simula o efeito inicial do seu código (gravidade desligada no fade-in)
@@ -385,9 +308,9 @@ export default class BaseLevel extends Phaser.Scene {
         // 4. Coletar Moedas (Sem destruir a moeda do cenário)
         this.physics.add.overlap(this.playerGroup, this.coins, (player, coin) => {
             if (!player.isAlive) return;
-
             // Checa se ESTE player específico já pegou ESTA moeda
             if (!player.collectedCoinsSet.has(coin)) {
+                player.timerReset();
                 player.collectedCoinsSet.add(coin);
                 player.coinsCollected++;
             }
@@ -408,8 +331,6 @@ export default class BaseLevel extends Phaser.Scene {
         const dmgObjects = [this.lava, this.spikes];
         this.physics.add.overlap(this.playerGroup, dmgObjects, (player, obj) => {
             if (!player.isAlive) return;
-
-            // Apenas mata o clone específico, em vez de diminuir o "this.registry.life" global
             player.die();
         });
 
@@ -431,12 +352,45 @@ export default class BaseLevel extends Phaser.Scene {
         const dmgObjects = [this.lava, this.spikes]
 
         this.physics.add.overlap(this.player, this.portals, this.nextLevel, null, this);
-        this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
-            this.registry.inc('life', -1);
-            this.registry.inc('deaths', 1);
-            this.player.takeDamage(obj);
-            this.lifeText.setText('Life: ' + this.registry.get('life'));
-            this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
+        this.physics.add.overlap(this.player, dmgObjects, async (player, obj) => {
+            // Evita múltiplos registros se o jogador já estiver em estado de dano/respawn
+            if (this.player.isInvulnerable) return;
+
+            this.player.isInvulnerable = true;
+            const sessionId = this.registry.get('sessionId');
+
+            try {
+                const response = await fetch('/api/player-damage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualiza com os valores autoritativos do servidor
+                    this.registry.set('life', data.newLife);
+                    this.registry.set('deaths', data.newDeaths);
+
+                    this.lifeText.setText('Life: ' + data.newLife);
+                    this.deathCounter.setText('Deaths: ' + data.newDeaths);
+
+                    // Animação / lógica visual de dano
+                    this.player.takeDamage(obj);
+
+                    if (data.isGameOver) {
+                        this.postTheFlag(); // ou cena de Game Over
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao registrar dano:', err);
+            } finally {
+                // Cooldown de invulnerabilidade (ex: 1 segundo de i-frames)
+                this.time.delayedCall(1000, () => {
+                    this.player.isInvulnerable = false;
+                });
+            }
         }, null, this);
 
         this.player.body.allowGravity = false;
@@ -445,12 +399,34 @@ export default class BaseLevel extends Phaser.Scene {
             this.player.body.allowGravity = true;
         });
 
-        this.physics.add.overlap(this.player, this.coins, (player, coin) => {
-            this.coins.collect(coin);
-            player.coinsCollected++;
-            this.registry.inc('score', 10);
-            this.scoreText.setText('Score: ' + this.registry.get('score'));
+        this.physics.add.overlap(this.player, this.coins, async (player, coin) => {
+            coin.disableBody(true, true);
+
+            const sessionId = this.registry.get('sessionId');
+            const coinId = coin.getData('ID');
+
+            try {
+                const response = await fetch('/api/collect-coin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, coinId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Atualiza com a pontuação autoritativa do servidor
+                    this.registry.set('score', data.newScore);
+                    this.scoreText.setText('Score: ' + data.newScore);
+                } else {
+                    coin.enableBody(true, coin.x, coin.y, true, true);
+                }
+            } catch (err) {
+                coin.enableBody(true, coin.x, coin.y, true, true);
+            }
         }, null, this);
+
+
         this.physics.add.overlap(this.player, this.bones, (player, bone) => {
             this.doors.getChildren().forEach(door => {
                 if (door.getData('ID') === bone.getData('ID')) {
@@ -463,15 +439,33 @@ export default class BaseLevel extends Phaser.Scene {
     }
 
     updateAIPlayers(delta) {
+        const maxDiagonal = 1000;
+        const playersAtivos = this.players.filter(p => p.isAlive);
+        playersAtivos.forEach((player) => {
+            if (player.timer > 3000) {
+                player.die("inactivity");
+                return;
+            }
 
-
-        
-        this.players.forEach((player) => {
-            if (!player.isAlive) return;
+            let remainingCoins = this.coins.getChildren().filter(coin => !player.collectedCoinsSet.has(coin))
+            let nearestCoin = Utils.nearestObj(player, remainingCoins)
+            const distAtual = Phaser.Math.Distance.Between(player.x, player.y, nearestCoin.x, nearestCoin.y);
+            if (distAtual < player.minDistance) {
+                player.minDistance = distAtual;
+            }
+            const progress = 1 - Math.min(player.minDistance / maxDiagonal, 1);
 
             // 1. Coleta os inputs da tela (sua lógica do neural.js)
-            const inputs = [];
+            const dx = (nearestCoin.x - player.x) / this.sys.game.config.width;
+            const dy = (nearestCoin.y - player.y) / this.sys.game.config.height;
+            const dash = player.canDash ? 1 : 0
+            const floor = player.body.onFloor() ? 1 : 0;
 
+            const inputs = [dx, dy, dash, floor];
+            player.brain.score = (player.coinsCollected * 100) + progress * 10 - ((player.timer / 6000) * 0.1);
+
+
+            console.log(player.brain.score);
             // 2. A IA decide (TensorFlow ou Carrot)
             const output = this.aiManager.think(player.brain, inputs);
             // 3. Injeta a decisão nos controles virtuais do Player
@@ -480,7 +474,11 @@ export default class BaseLevel extends Phaser.Scene {
             // 4. O PULO DO GATO: Passamos NULL no primeiro parâmetro!
             // Assim ele sabe que não deve ler o teclado humano.
             player.update(null, delta);
+
         });
+        if (playersAtivos.length === 0) {
+            this.aiManager.nextGeneration(this.players);
+        }
     }
 
     pauseGame() {

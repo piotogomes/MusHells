@@ -12,6 +12,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     dashBarTween;
     dashBarBG;
     dashBar;
+    timer = 0;
+    minDist = Infinity;
 
     // Propriedades para a IA
     brain = null;
@@ -36,7 +38,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.body.setCircle(14, 2, 3);
+        this.body.setSize(32, 32);
         this.setOrigin(0.5, 0.5);
         this.setDepth(10);
         this.setCollideWorldBounds(true);
@@ -69,6 +71,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Adaptamos o update para aceitar controles da IA se nenhum teclado for passado
     update(controls, delta) {
+        this.timer += delta;
         if (!this.isAlive) return;
 
         // Se passar "controls" (jogador humano), usa ele; se não, usa aiControls
@@ -214,31 +217,37 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Método para o Neural.js injetar os comandos da IA a cada frame
     applyAICommands(outputs) {
-        // Exemplo de outputs: [Esquerda, Direita, Pular, Dash, Cima, Baixo]
-        this.aiControls.left.isDown = outputs[0] > 0.5;
-        this.aiControls.right.isDown = outputs[1] > 0.5;
+        // outputs = [Esquerda, Direita, Pular, Dash, Cima, Baixo] (Valores de 0.0 a 1.0)
 
-        // Trata Pulo (Detecta transição para acionar o JustDown)
+        // 1. Eixo Horizontal (Evita apertar esquerda e direita juntos)
+        // Só ativa se passar de 0.5 e for mais forte que a direção oposta
+        this.aiControls.left.isDown = outputs[0] > 0.5 && outputs[0] > outputs[1];
+        this.aiControls.right.isDown = outputs[1] > 0.5 && outputs[1] > outputs[0];
+
+        // 2. Pulo (Simula o justDown para não voar ou pular infinito)
         const wantJump = outputs[2] > 0.5;
-        if (wantJump && !this.aiControls.jump.isDown) {
-            this.aiControls.jump.justDown = true;
-        }
+        this.aiControls.jump.justDown = wantJump && !this.aiControls.jump.isDown;
         this.aiControls.jump.isDown = wantJump;
         this.aiControls.jump.isUp = !wantJump;
 
-        // Trata Dash (Detecta transição para acionar o JustDown)
+        // 3. Dash (Mesma lógica do pulo para ativar só no instante da decisão)
         const wantDash = outputs[3] > 0.5;
-        if (wantDash && !this.aiControls.dash.isDown) {
-            this.aiControls.dash.justDown = true;
-        }
+        this.aiControls.dash.justDown = wantDash && !this.aiControls.dash.isDown;
         this.aiControls.dash.isDown = wantDash;
 
-        // Cima / Baixo (Úteis para mirar a direção do Dash Omnidirecional)
-        this.aiControls.up.isDown = outputs[4] > 0.5;
-        this.aiControls.down.isDown = outputs[5] > 0.5;
+        // 4. Eixo Vertical (Cima / Baixo - Útil para mirar o dash omnidirecional)
+        // Também previne mirar pra cima e pra baixo ao mesmo tempo
+        this.aiControls.up.isDown = outputs[4] > 0.5 && outputs[4] > outputs[5];
+        this.aiControls.down.isDown = outputs[5] > 0.5 && outputs[5] > outputs[4];
     }
 
-    die() {
+    die(cause) {
+        if(cause === "inactivity") {
+            this.brain.score -= 2000;
+        }
+        else {
+            this.brain.score -= 50;
+        }
         this.isAlive = false;
         this.setVisible(false);
         this.body.enable = false;
@@ -247,7 +256,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     reset(x, y, newBrain) {
+        this.timerReset();
         this.setPosition(x, y);
+        this.minDist = Infinity;
         this.brain = newBrain;
         if (this.brain) this.brain.score = 0;
         this.isAlive = true;
@@ -257,6 +268,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.dashBar.setVisible(true);
         this.coinsCollected = 0;
         this.reachedDoor = false;
+    }
+
+    timerReset() {
+        this.timer = 0;
     }
 
     takeDamage(obj) {
