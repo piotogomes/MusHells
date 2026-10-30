@@ -1,4 +1,5 @@
 import Player from './Player.js';
+import AIManager from './AIManager.js';
 import Phaser from 'phaser';
 
 import { Coins, Doors, Bones, Spikes, Platforms, Fireballs } from './GameObjects.js';
@@ -22,7 +23,7 @@ export default class BaseLevel extends Phaser.Scene {
         this.spikeMap = new Map();
         this.timer = this.registry.get('timer')
         this.deaths = this.registry.get('deaths')
-
+        this.aiManager = new AIManager(this, 50);
     }
 
 
@@ -33,40 +34,19 @@ export default class BaseLevel extends Phaser.Scene {
         this.lifeText = this.add.text(16, 40, `Life: ${this.registry.get('life')}`, { fontSize: '24px', fill: '#fff' });
         this.deathCounter = this.add.text(16, 66, `Deaths: ${this.registry.get('deaths')}`, { fontSize: '24px', fill: '#b8190e' });
 
-        this.player = new Player(this, 150, 700);
-        this.player.body.allowGravity = false;
-        this.cameras.main.fadeIn(900, 0, 0, 0);
-        this.cameras.main.once('camerafadeincomplete', () => {
-            this.player.body.allowGravity = true;
-        });
+
 
         this.coins = new Coins(this, this.coinsData)
-        this.physics.add.overlap(this.player, this.coins, (player, coin) => {
-            this.coins.collect(coin);
-            this.registry.inc('score', 10);
-            this.scoreText.setText('Score: ' + this.registry.get('score'));
-        }, null, this);
-
         this.doors = new Doors(this, this.doorsData)
-        this.physics.add.collider(this.player, this.doors, null, null, this);
-
         this.bones = new Bones(this, this.bonesData)
-        this.physics.add.overlap(this.player, this.bones, (player, bone) => {
-            this.doors.getChildren().forEach(door => {
-                if (door.getData('ID') === bone.getData('ID')) {
-                    this.doors.open(door)
-                }
-            });
-            this.bones.collect(bone)
 
-        }, null, this);
+
 
         this.platforms = new Platforms(this, this.platformsData);
         this.platforms.getChildren().forEach((plat) => {
             this.platformMap.set(plat.getData('ID'), plat);
         })
 
-        this.createLava(this.lavaData)
 
         this.spikes = new Spikes(this, this.spikeData)
         this.spikes.getChildren().forEach((spike) => {
@@ -74,24 +54,15 @@ export default class BaseLevel extends Phaser.Scene {
         })
 
         this.physics.add.collider(this.spikes, this.platforms, null, null, this);
-        this.physics.add.collider(this.player, this.platforms, null, null, this);
-
-        const dmgObjects = [this.lava, this.spikes]
-
-
-        this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
-            this.registry.inc('life', -1);
-            this.registry.inc('deaths', 1);
-            this.player.takeDamage(obj);
-            this.lifeText.setText('Life: ' + this.registry.get('life'));
-            this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
-        }, null, this);
+        this.createLava(this.lavaData)
 
 
 
+        // this.createPlayer();
         this.createFloor(this.floorData)
         this.createPortal(this.portalData)
         this.createInputs()
+        this.createAIPlayers();
 
 
 
@@ -128,7 +99,8 @@ export default class BaseLevel extends Phaser.Scene {
             this.scene.pause()
             this.scene.launch('GameOver', 'loser');
         }
-        this.player.update(this.activeControls, delta);
+        //this.player.update(this.activeControls, delta);
+        this.updateAIPlayers(delta);
         this.registry.inc('timer', delta / 16.6 / 60);
     }
 
@@ -249,7 +221,6 @@ export default class BaseLevel extends Phaser.Scene {
             img.body.setAllowGravity(false);
             img.body.setImmovable(true);
         });
-        this.physics.add.collider(this.player, this.floor, null, null, this);
     }
 
 
@@ -276,7 +247,6 @@ export default class BaseLevel extends Phaser.Scene {
             img.body.setAllowGravity(false);
             img.body.setImmovable(true)
         });
-        this.physics.add.overlap(this.player, this.portals, this.nextLevel, null, this);
     }
 
     // NEXT LEVEL
@@ -299,6 +269,140 @@ export default class BaseLevel extends Phaser.Scene {
         localStorage.setItem('saveAss', ass);
     }
 
+    createAIPlayers(popSize = 50) {
+        // 1. Inicializa o AIManager (assuma que já fez import { AIManager } ...)
+        this.players = [];
+        this.playerGroup = this.physics.add.group(); // Agrupa todos para as colisões
+
+        // 2. Cria os clones
+        for (let i = 0; i < popSize; i++) {
+            let brain = this.aiManager.population[i];
+            let player = new Player(this, 150, 700, brain);
+            player.setAlpha(0.3);
+
+            // Simula o efeito inicial do seu código (gravidade desligada no fade-in)
+            player.body.allowGravity = false;
+
+            // Arrays internos da IA para não pegarem o mesmo item 2 vezes
+            player.collectedCoinsSet = new Set();
+            player.collectedBonesSet = new Set();
+
+            this.players.push(player);
+            this.playerGroup.add(player);
+        }
+
+        // Restaura a gravidade após o fade-in para toda a população
+        this.cameras.main.once('camerafadeincomplete', () => {
+            this.players.forEach(p => {
+                if (p.active) p.body.allowGravity = true;
+            });
+        });
+
+        // 3. Colisões Sólidas (Eles batem nas paredes normalmente)
+        this.physics.add.collider(this.playerGroup, this.platforms);
+        this.physics.add.collider(this.playerGroup, this.doors);
+        this.physics.add.collider(this.playerGroup, this.floor, null, null, this);
+
+        // 4. Coletar Moedas (Sem destruir a moeda do cenário)
+        this.physics.add.overlap(this.playerGroup, this.coins, (player, coin) => {
+            if (!player.isAlive) return;
+
+            // Checa se ESTE player específico já pegou ESTA moeda
+            if (!player.collectedCoinsSet.has(coin)) {
+                player.collectedCoinsSet.add(coin);
+                player.coinsCollected++;
+            }
+        });
+
+        // 5. Coletar Ossos
+        this.physics.add.overlap(this.playerGroup, this.bones, (player, bone) => {
+            if (!player.isAlive) return;
+
+            if (!player.collectedBonesSet.has(bone)) {
+                player.collectedBonesSet.add(bone);
+                // Você pode usar isso depois para dar pontos extras de inteligência para a IA
+                player.brain.score += 1000;
+            }
+        });
+
+        // 6. Receber Dano (Lava e Espinhos)
+        const dmgObjects = [this.lava, this.spikes];
+        this.physics.add.overlap(this.playerGroup, dmgObjects, (player, obj) => {
+            if (!player.isAlive) return;
+
+            // Apenas mata o clone específico, em vez de diminuir o "this.registry.life" global
+            player.die();
+        });
+
+        // 7. Chegar no Portal / Final da Fase
+        this.physics.add.overlap(this.playerGroup, this.portals, (player, portal) => {
+            if (!player.isAlive) return;
+
+            // player.reachedDoor = true;
+            player.die(); // Mata a IA para ela parar de se mover (ela zera a fase)
+        });
+    }
+
+    createPlayer() {
+        this.player = new Player(this, 150, 700, null);
+        this.physics.add.collider(this.player, this.platforms, null, null, this);
+        this.physics.add.collider(this.player, this.doors, null, null, this);
+        this.physics.add.collider(this.player, this.floor, null, null, this);
+
+        const dmgObjects = [this.lava, this.spikes]
+
+        this.physics.add.overlap(this.player, this.portals, this.nextLevel, null, this);
+        this.physics.add.overlap(this.player, dmgObjects, (player, obj) => {
+            this.registry.inc('life', -1);
+            this.registry.inc('deaths', 1);
+            this.player.takeDamage(obj);
+            this.lifeText.setText('Life: ' + this.registry.get('life'));
+            this.deathCounter.setText('Deaths: ' + this.registry.get('deaths'));
+        }, null, this);
+
+        this.player.body.allowGravity = false;
+        this.cameras.main.fadeIn(900, 0, 0, 0);
+        this.cameras.main.once('camerafadeincomplete', () => {
+            this.player.body.allowGravity = true;
+        });
+
+        this.physics.add.overlap(this.player, this.coins, (player, coin) => {
+            this.coins.collect(coin);
+            player.coinsCollected++;
+            this.registry.inc('score', 10);
+            this.scoreText.setText('Score: ' + this.registry.get('score'));
+        }, null, this);
+        this.physics.add.overlap(this.player, this.bones, (player, bone) => {
+            this.doors.getChildren().forEach(door => {
+                if (door.getData('ID') === bone.getData('ID')) {
+                    this.doors.open(door)
+                }
+            });
+            this.bones.collect(bone)
+
+        }, null, this);
+    }
+
+    updateAIPlayers(delta) {
+
+
+        
+        this.players.forEach((player) => {
+            if (!player.isAlive) return;
+
+            // 1. Coleta os inputs da tela (sua lógica do neural.js)
+            const inputs = [];
+
+            // 2. A IA decide (TensorFlow ou Carrot)
+            const output = this.aiManager.think(player.brain, inputs);
+            // 3. Injeta a decisão nos controles virtuais do Player
+            player.applyAICommands(output);
+
+            // 4. O PULO DO GATO: Passamos NULL no primeiro parâmetro!
+            // Assim ele sabe que não deve ler o teclado humano.
+            player.update(null, delta);
+        });
+    }
 
     pauseGame() {
         this.scene.pause(); // Congela a física e o update desta cena
